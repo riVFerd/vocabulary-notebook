@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script>
+
+    </script>
+
+    <style>
+        #people-list {
+            border: 2px solid black;
+            border-collapse: collapse;
+        }
+
+        #people-list td {
+            border: 2px solid black;
+            padding: 0.25rem;
+        }
+
+        #people-list th {
+            border: 2px solid black;
+            padding: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+<table id="people-list">
+    <thead>
+    <tr>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Job</th>
+        <th>Salary</th>
+        <th>Age</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for person in people %}
+    <tr>
+        <td>{{ person.fname }}</td>
+        <td>{{ person.lname }}</td>
+        <td>{{ person.job }}</td>
+        <td>{{ person.pay }}</td>
+        <td>{{ person.age }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<button onclick='window.location.href = "/"'>Go back to the main page</button>
+</body>
+</html>
