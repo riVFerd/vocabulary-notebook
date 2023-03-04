@@ -1,41 +1,75 @@
+from datetime import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from pymongo import MongoClient
+from dotenv import load_dotenv
+from os.path import dirname, join
 import requests
+import os
 
+load_dotenv(join(dirname(__file__), '.env'))
 
 app = Flask(__name__)
 
-client = MongoClient('Mongo DB connection string')
-db = client.dbsparta_plus_week2
+db = MongoClient(os.environ.get('MONGODB_URI'))[os.environ.get('DB_NAME')]
 
 
 @app.route('/')
 def main():
-    # This route should fetch all of 
-    # the words from the database and 
-    # pass them on to the HTML template
-    return render_template("index.html")
+    words_result = db.words.find({}, {'_id': False})
+    words = []
+
+    for word in words_result:
+        definition = word['definitions'][0]['shortdef']
+        definition = definition if type(definition) is str else definition[0]
+        words.append({
+            'word': word['word'],
+            'definition': definition,
+        })
+    return render_template(
+        'index.html',
+        words=words
+    )
 
 
 @app.route('/detail/<keyword>')
 def detail(keyword):
-    # This handler should find the 
-    # requested word through the dictionary 
-    # API and pass the data for that word onto 
-    # the template
-    return render_template("detail.html", word=keyword)
+    api_key = os.environ.get('API_KEY')
+    url = f'https://www.dictionaryapi.com/api/v3/references/collegiate/json/{keyword}?key={api_key}'
+    response = requests.get(url)
+    definitions = response.json()
+    return render_template(
+        'detail.html',
+        word=keyword,
+        definitions=definitions,
+        status=request.args.get('status_give', 'new')
+    )
 
 
 @app.route('/api/save_word', methods=['POST'])
 def save_word():
-    #  This handler should save the word in the database
-    return jsonify({'result': 'success', 'msg': 'word saved'})
+    json_data = request.get_json()
+    word = json_data.get('word_give')
+    definitions = json_data.get('definitions_give')
+    doc = {
+        'word': word,
+        'definitions': definitions,
+        'created_at': datetime.now().strftime('%Y.%m.%d')
+    }
+    db.words.insert_one(doc)
+    return jsonify({
+        'result': 'success',
+        'msg': f'the word, {word}, was saved!!!',
+    })
 
 
 @app.route('/api/delete_word', methods=['POST'])
 def delete_word():
-    #  This handler should delete the word from the database
-    return jsonify({'result': 'success', 'msg': 'word deleted'})
+    word = request.form.get('word_give')
+    db.words.delete_one({'word': word})
+    return jsonify({
+        'result': 'success',
+        'msg': f'the word {word} was deleted'
+    })
 
 
 if __name__ == '__main__':
