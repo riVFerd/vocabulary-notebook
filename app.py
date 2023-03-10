@@ -25,9 +25,11 @@ def main():
             'word': word['word'],
             'definition': definition,
         })
+    msg = request.args.get('msg')
     return render_template(
         'index.html',
-        words=words
+        words=words,
+        msg=msg
     )
 
 
@@ -37,6 +39,18 @@ def detail(keyword):
     url = f'https://www.dictionaryapi.com/api/v3/references/collegiate/json/{keyword}?key={api_key}'
     response = requests.get(url)
     definitions = response.json()
+    if not definitions:
+        return redirect(url_for(
+            'main',
+            msg=f'Could not find "{keyword}"'
+        ))
+
+    if type(definitions[0]) is str:
+        return redirect(url_for(
+            'main',
+            msg=f'Could not find "{keyword}", did you mean :',
+            suggestions=definitions
+        ))
     return render_template(
         'detail.html',
         word=keyword,
