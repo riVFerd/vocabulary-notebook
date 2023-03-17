@@ -49,9 +49,22 @@
             <button id="btn-delete" onclick="delete_word()" class="btn btn-sparta btn-lg">
                 DELETE
             </button>
+            <div id="examples" class="container">
+                <h3 style="text-align: center;margin-bottom:1rem">Write your own sentences!</h3>
+                <ul id="example-list">
+                    <li id="ex-0">This sentence contains the word 'word'.&nbsp;&nbsp;&nbsp;<a
+                            href="javascript:delete_ex(0)">delete</a></li>
+                    <li id="ex-1">I don't like using the MS Word program.&nbsp;&nbsp;&nbsp;<a
+                            href="javascript:delete_ex(1)">delete</a></li>
+                </ul>
+                <div class="d-flex justify-content-between" style="margin-left:20px;">
+                    <input id="new-example" class="form-control form-control-sm" style="margin-right: 0.5rem">
+                    <button class="btn btn-outline-secondary btn-sm me-2" onclick="add_ex()">Add</button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="delete_ex_all()">Delete All</button>
+                </div>
+            </div>
         {% endif %}
     </div>
-</div>
 </div>
 <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
         crossorigin="anonymous"></script>
@@ -63,6 +76,7 @@
 <script>
     let word = '{{ word }}';
     $(document).ready(function () {
+        get_examples();
     });
 
     function save_word() {
@@ -103,6 +117,81 @@
                 } else {
                     alert('Something went wrong...');
                 }
+            }
+        });
+    }
+
+    function get_examples() {
+        let list = $("#example-list"); // mencari tag html yang berID example list
+        list.empty(); // kosongkan terlebih dahulu
+        $.ajax({
+            type: "GET",
+            url: `/api/get_exs?word=${word}`,
+            data: {},
+            success: function (response) {
+                if (response.result === 'success') {
+                    let examples = response.examples;
+                    let temp_html = '';
+                    for (let i = 0; i < examples.length; i++) {
+                        let example = examples[i];
+                        let id = example.id;
+                        let sentence = example.example;
+                        console.log(id)
+                        temp_html += `
+                            <li>
+                            ${sentence}&nbsp;&nbsp;&nbsp;<a
+                            href="javascript:delete_ex('${id}')"
+                            >Delete</a>
+                            </li>
+
+                            `;
+                    }
+                    list.append(temp_html);
+                }
+            }
+        });
+    }
+
+    function add_ex() {
+        let new_ex = $('#new-example').val();
+        if (new_ex == '') return alert('Please enter a valid sentences');
+        $.ajax({
+            type: "POST",
+            url: `/api/save_ex`,
+            data: {
+                example: new_ex,
+                word: word,
+            },
+            success: function (response) {
+                $('#new-example').val("")
+                get_examples()
+            }
+        });
+    }
+
+    function delete_ex(id) {
+        console.log("deleting", id)
+        $.ajax({
+            type: "POST",
+            url: `/api/delete_ex`,
+            data: {
+                id: id
+            },
+            success: function (response) {
+                get_examples()
+            }
+        });
+    }
+
+    function delete_ex_all() {
+        $.ajax({
+            type: "POST",
+            url: `/api/delete_ex_all`,
+            data: {
+                word: word
+            },
+            success: function (response) {
+                get_examples()
             }
         });
     }

@@ -1,4 +1,5 @@
 from datetime import datetime
+from bson import ObjectId
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -84,6 +85,52 @@ def delete_word():
         'result': 'success',
         'msg': f'the word {word} was deleted'
     })
+
+
+@app.route('/api/get_exs', methods=['GET'])
+def get_exs():
+    word = request.args.get('word')
+    data = db.sentences.find({'word': word})
+    examples = []
+    for example in data:
+        examples.append({
+            'example': example.get('example'),
+            'id': str(example.get('_id')),
+        })
+    return jsonify({'result': 'success', 'examples': examples})
+
+
+@app.route('/api/save_ex', methods=['POST'])
+def save_ex():
+    example = request.form.get('example')
+    word = request.form.get('word')
+
+    doc = {
+        'word': word,
+        'example': example,
+    }
+    db.sentences.insert_one(doc)
+
+    return jsonify(
+        {
+            'result': 'success',
+            'msg': f'your sentece {example} was saved'
+        }
+    )
+
+
+@app.route('/api/delete_ex', methods=['POST'])
+def delete_ex():
+    id = request.form.get('id')
+    db.sentences.delete_one({'_id': ObjectId(id)})
+    return jsonify({'result': 'success'})
+
+
+@app.route('/api/delete_ex_all', methods=['POST'])
+def delete_ex_all():
+    word = request.form.get('word')
+    db.sentences.delete_many({'word': word})
+    return jsonify({'result': 'success'})
 
 
 if __name__ == '__main__':
